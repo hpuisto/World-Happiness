@@ -29,7 +29,8 @@ library(DescTools)
 library(data.table)
 library(readxl)
 
-setwd("C:/Users/hpuis/Documents/R/EdX/World Happiness")
+# Set your computer file location here for where you stored the files
+setwd("C:/EdX/World Happiness")
 
 # Import datasets
 data15 <- read.csv("wh2015.csv")
@@ -38,7 +39,7 @@ data17 <- read.csv("wh2017.csv")
 data18 <- read.csv("wh2018.csv")
 data19 <- read.csv("wh2019.csv")
 
-#Make all columns have same names
+#Make all columns in each dataset have the same names
 data15 <- data15 %>% 
   rename(
     score = Happiness.Score,
@@ -101,7 +102,6 @@ final_data19 = subset(data19, select = -c(Overall.rank) )
 
 # Fix 2018 file so the perceptions of corruption variable is numeric
 final_data18$gov_trust = as.numeric(final_data18$gov_trust)
-
 
 # Add dyst_res to 2018 and 2019 files as the difference between the score and the sum of the remaining fields
 final_data18 <- final_data18 %>% mutate(dyst_res = (Score-gdp_per_capita-social_support-life_exp-freedom-Generosity-gov_trust))
