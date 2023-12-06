@@ -21,7 +21,6 @@ if(!require(knitr)) install.packages("knitr", repos = "http://cran.us.r-project.
 if(!require(DescTools)) install.packages("DescTools", repos = "http://cran.us.r-project.org")
 if(!require(data.table)) install.packages("data.table", repos = "http://cran.us.r-project.org")
 if(!require(readxl)) install.packages("readxl", repos = "http://cran.us.r-project.org")
-if(!require(ggcorrplot)) install.packages("ggcorrplot", repos = "http://cran.us.r-project.org")
 
 library(tidyverse)
 library(caret)
@@ -29,7 +28,6 @@ library(knitr)
 library(DescTools)
 library(data.table)
 library(readxl)
-library(ggcorrplot)
 
 # Set your computer file location here for where you stored the files
 setwd("C:/EdX/World Happiness")
@@ -131,16 +129,13 @@ full_data <-  rbind(final_data15, final_data16, final_data17, final_data18, fina
 ##########################################################
 
 # The RMSE function that will be used in this project is:
-RMSE <- function(true_score = NULL, predicted_score = NULL) {
-  sqrt(mean((true_score - predicted_score)^2))
+RMSE <- function(true_score, predicted_score, na.rm = TRUE) {
+  sqrt(mean((true_score - predicted_score)^2, na.rm = na.rm))
 }
 
 ##########################################################
 # Number of columns and rows in large dataset
 dim(full_data)
-
-# Show an organized section of large dataset
-glimpse(full_data)
 
 # Show the structure of the training dataset
 str(full_data)
@@ -150,25 +145,20 @@ summary(full_data)
 
 # Create histograms of scores for each year’s data and the full combined list
 hist_15 <- hist(final_data15$score, freq=TRUE, col="black", border="white", 
-     main="2015 Happiness Scores", xlab="Score", ylab="Count")
+                main="2015 Happiness Scores", xlab="Score", ylab="Count")
 hist_16 <- hist(final_data16$score, freq=TRUE, col="black", border="white", 
-     main="2016 Happiness Scores", xlab="Score", ylab="Count")
+                main="2016 Happiness Scores", xlab="Score", ylab="Count")
 hist_17 <- hist(final_data17$score, freq=TRUE, col="black", border="white", 
-     main="2017 Happiness Scores", xlab="Score", ylab="Count")
+                main="2017 Happiness Scores", xlab="Score", ylab="Count")
 hist_18 <- hist(final_data18$score, freq=TRUE, col="black", border="white", 
-     main="2018 Happiness Scores", xlab="Score", ylab="Count")
+                main="2018 Happiness Scores", xlab="Score", ylab="Count")
 hist_19 <- hist(final_data19$score, freq=TRUE, col="black", border="white", 
-     main="2019 Happiness Scores", xlab="Score", ylab="Count")
+                main="2019 Happiness Scores", xlab="Score", ylab="Count")
 hist_all <- hist(full_data$score, freq=TRUE, col="black", border="white", 
-     main="Happiness Scores for All Years", xlab="Score", ylab="Count")
+                 main="Happiness Scores for All Years", xlab="Score", ylab="Count")
 
 ##########################################################
-# Explore the correlation between the predictors and happiness score
-temp <- full_data[, c(3,4,5,6,7,8,9)]
-cormat <- signif(cor(temp), 2)
-ggcorrplot(cormat)
-
-# Confirm correlations with scatterplots
+# Explore the correlation between the predictors and happiness score with scatterplots
 # Plot gdp_per_capita vs score
 ggplot(data = full_data, aes(x = score, y = gdp_per_capita)) + 
   geom_point(color='black') +
@@ -200,9 +190,9 @@ ggplot(data = full_data, aes(x = score, y = generosity)) +
   geom_smooth(method = "lm", se = TRUE)
 
 # Create training and testing datasets using p=0.80
-train_index <- createDataPartition(data$Score, times=1, p=0.80, list=FALSE)
-train <- data[train_index,]
-test <- data[-train_index,]
+train_index <- createDataPartition(full_data$score, times=1, p=0.80, list=FALSE)
+train <- full_data[train_index,]
+test <- full_data[-train_index,]
 
 
 ##########################################################
@@ -212,34 +202,58 @@ test <- data[-train_index,]
 ##########################################################
 
 ##########################################################
-# Method 1: Add six key variables together to predict scores
+# Method 1: Add six key variables together to predict scores, including dystopia constant
 ##########################################################
 # Predict score by sum method
-sumvar_model <- train %>% mutate(pred_score = gdp.per.capita + social.support + life.exp + freedom + gov_trust + generosity)
+sumvar_model <- train %>%
+  mutate(pred_score = gdp_per_capita + social_support + life_exp + freedom + gov_trust + generosity + 1.85,
+         RMSE = RMSE(score, pred_score))
 
 # Calculate the RMSE
-sum_rmse = RMSE(test$score, pred_score)
+sum_rmse = RMSE(sumvar_model$score, sumvar_model$pred_score)
 
 # Remove generosity since little to no correlation to score
 # Predict score by sum method without generosity
-sumvar_nogen_model <- train %>% mutate(pred_score = gdp.per.capita + social.support + life.exp + freedom + gov_trust)
+sumvar_nogen_model <- train %>% mutate(pred_score = gdp_per_capita + social_support + life_exp + freedom + gov_trust + 1.85,
+                                       RMSE = RMSE(score, pred_score))
 
 # Calculate the RMSE
-sum_nogen_rmse = RMSE(test$score, pred_score)
+sum_nogen_rmse = RMSE(sumvar_nogen_model$score, sumvar_nogen_model$pred_score)
+
+#Apply to test validation set
+# Predict score by sum method
+sumvar_model_test <- test %>%
+  mutate(pred_score = gdp_per_capita + social_support + life_exp + freedom + gov_trust + generosity + 1.85,
+         RMSE = RMSE(score, pred_score))
+
+# Calculate the RMSE
+sum_rmse_test = RMSE(sumvar_model_test$score, sumvar_model_test$pred_score)
+
+# Remove generosity since little to no correlation to score
+# Predict score by sum method without generosity
+sumvar_nogen_model_test <- test %>% mutate(pred_score = gdp_per_capita + social_support + life_exp + freedom + gov_trust + 1.85,
+                                       RMSE = RMSE(score, pred_score))
+
+# Calculate the RMSE
+sum_nogen_rmse_test = RMSE(sumvar_nogen_model_test$score, sumvar_nogen_model_test$pred_score)
+
 
 ##########################################################
 # Method 2: Use the Generalized Linear Model
 ##########################################################
 # Predict score using GLM
-data_fit <- glm(score ~ gdp.per.capita + social.support + life.exp + freedom + gov_trust + generosity,
-           data = train)
+data_fit <- glm(score ~ gdp_per_capita + social_support + life_exp + freedom + gov_trust + generosity,
+                data = train)
 
 # Add predicted scores to test data frame
+results <- test %>% mutate(pred_score = as.numeric(predict(data_fit, test, type = "response")))
+
 results <- test %>% 
-  mutate(pred_score = predict.glm(data_fit, newdata=test))
+  mutate(pred_score = as.numeric(predict.glm(data_fit, newdata=test)),
+         RMSE = RMSE(score, pred_score))
 
 # Calculate the RMSE
-glm_rmse = RMSE(results$Score, results$pred_score)
+glm_rmse = RMSE(results$score, results$pred_score)
 
 # Plot predicted scores vs actual scores with x=y line
 ggplot(data = results, aes(score, pred_score)) + 
@@ -252,15 +266,16 @@ data_fit$coefficients
 
 # Remove generosity since little to no correlation to score
 # Predict score using GLM
-data_fit_nogen <- glm(score ~ score ~ gdp.per.capita + social.support + life.exp + freedom + gov_trust, 
-                data = train)
+data_fit_nogen <- glm(score ~ gdp_per_capita + social_support + life_exp + freedom + gov_trust, 
+                      data = train)
 
 # Add predicted scores to test data frame
 results_nogen <- test %>% 
-  mutate(pred_score = predict.glm(data_fit_nogen, newdata=test))
+  mutate(pred_score = as.numeric(predict.glm(data_fit_nogen, newdata=test)),
+         RMSE = RMSE(score, pred_score))
 
 # Calculate the RMSE
-glm_nogen_rmse = RMSE(results_nogen$Score, results_nogen$pred_score)
+glm_nogen_rmse = RMSE(results_nogen$score, results_nogen$pred_score)
 
 # plot predicted scores vs actual scores
 # also plot 1 to 1 line
@@ -271,3 +286,14 @@ ggplot(data = results_nogen, aes(score, pred_score)) +
 
 # print coefficients of fitted model
 data_fit_nogen$coefficients
+
+##########################################################
+##########################################################
+# Begin Results
+##########################################################
+##########################################################
+# Print all RMSEs to choose best one
+sum_rmse_test
+sum_nogen_rmse_test
+glm_rmse
+glm_nogen_rmse
