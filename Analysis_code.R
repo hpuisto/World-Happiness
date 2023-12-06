@@ -228,8 +228,6 @@ data_fit <- glm(score ~ gdp_per_capita + social_support + life_exp + freedom + g
                 data = train)
 
 # Add predicted scores to test data frame
-results <- test %>% mutate(pred_score = as.numeric(predict(data_fit, test, type = "response")))
-
 results <- test %>% 
   mutate(pred_score = as.numeric(predict.glm(data_fit, newdata=test)),
          RMSE = RMSE(score, pred_score))
