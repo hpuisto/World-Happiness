@@ -248,7 +248,7 @@ The RMSE for summing the key factors and the dystopian constant is `r sum_rmse`.
 
 Next, we apply the same first model except this time we remove `Generosity`.
 
-```{r sum_factors_model, echo=TRUE, warning=FALSE}
+```{r sum_nogen_model, echo=TRUE, warning=FALSE}
 # Predict score by sum method
 sumvar_nogen_model <- full_data %>% mutate(pred_score = gdp_per_capita + social_support + life_exp + freedom + gov_trust + 1.85,
           RMSE = RMSE(score, pred_score))
@@ -330,7 +330,7 @@ ggplot(data = results_nogen, aes(score, pred_score)) +
 
 The RMSE for applying the glm to the key factors (without `Generosity`) is `r glm_nogen_rmse`. The calculated coefficients are then used to determine the new equation for our model.
 
-```{r coefficients, echo=FALSE}
+```{r coefficients_nogen, echo=FALSE}
 # Print coefficients of fitted model
 data_fit_nogen$coefficients
 
