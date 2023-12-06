@@ -147,81 +147,15 @@ str(full_data)
 summary(full_data)
 
 # Create histograms of scores for each year’s data and the full combined list
-hist_scores15 <- final_data15 %>%
-  count(country) %>%
-  ggplot(aes(n)) +
-  geom_histogram(fill = 'black') +
-  labs(
-    title = '2015 Happiness Scores',
-    x = 'Score', y = 'Count', fill = element_blank()
-  ) +
-  theme_classic()
-hist_scores15
-
-hist_scores16 <- final_data16 %>%
-  count(country) %>%
-  ggplot(aes(n)) +
-  geom_histogram(fill = 'black') +
-  labs(
-    title = '2016 Happiness Scores',
-    x = 'Score', y = 'Count', fill = element_blank()
-  ) +
-  theme_classic()
-hist_scores16
-
-hist_scores17 <- final_data17 %>%
-  count(country) %>%
-  ggplot(aes(n)) +
-  geom_histogram(fill = 'black') +
-  labs(
-    title = '2017 Happiness Scores',
-    x = 'Score', y = 'Count', fill = element_blank()
-  ) +
-  theme_classic()
-hist_scores17
-
-hist_scores18 <- final_data18 %>%
-  count(country) %>%
-  ggplot(aes(n)) +
-  geom_histogram(fill = 'black') +
-  labs(
-    title = '2018 Happiness Scores',
-    x = 'Score', y = 'Count', fill = element_blank()
-  ) +
-  theme_classic()
-hist_scores18
-
-hist_scores19 <- final_data19 %>%
-  count(country) %>%
-  ggplot(aes(n)) +
-  geom_histogram(fill = 'black') +
-  labs(
-    title = '2019 Happiness Scores',
-    x = 'Score', y = 'Count', fill = element_blank()
-  ) +
-  theme_classic()
-hist_scores19
-
-hist_scores <- full_data %>%
-  count(country) %>%
-  ggplot(aes(n)) +
-  geom_histogram(fill = 'black') +
-  labs(
-    title = 'Happiness Scores for All Years',
-    x = 'Score', y = 'Count', fill = element_blank()
-  ) +
-  theme_classic()
-hist_scores
-
-##############################
-# histogram of scores
-hist(final_data15$score, freq=TRUE, col="black", border="white", 
+hist_15 <- hist(final_data15$score, freq=TRUE, col="black", border="white", 
      main="2015 Happiness Scores", xlab="Score", ylab="Count")
-hist(final_data16$score, freq=TRUE, col="black", border="white", 
+hist_16 <- hist(final_data16$score, freq=TRUE, col="black", border="white", 
      main="2016 Happiness Scores", xlab="Score", ylab="Count")
-hist(final_data17$score, freq=TRUE, col="black", border="white", 
+hist_17 <- hist(final_data17$score, freq=TRUE, col="black", border="white", 
      main="2017 Happiness Scores", xlab="Score", ylab="Count")
-hist(final_data18$score, freq=TRUE, col="black", border="white", 
+hist_18 <- hist(final_data18$score, freq=TRUE, col="black", border="white", 
      main="2018 Happiness Scores", xlab="Score", ylab="Count")
-hist(final_data19$score, freq=TRUE, col="black", border="white", 
+hist_19 <- hist(final_data19$score, freq=TRUE, col="black", border="white", 
      main="2019 Happiness Scores", xlab="Score", ylab="Count")
+hist_all <- hist(full_data$score, freq=TRUE, col="black", border="white", 
+     main="Happiness Scores for All Years", xlab="Score", ylab="Count")
