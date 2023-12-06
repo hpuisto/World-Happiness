@@ -205,7 +205,7 @@ test <- full_data[-train_index,]
 # Method 1: Add six key variables together to predict scores, including dystopia constant
 ##########################################################
 # Predict score by sum method
-sumvar_model <- train %>%
+sumvar_model <- full_data %>%
   mutate(pred_score = gdp_per_capita + social_support + life_exp + freedom + gov_trust + generosity + 1.85,
          RMSE = RMSE(score, pred_score))
 
@@ -214,29 +214,11 @@ sum_rmse = RMSE(sumvar_model$score, sumvar_model$pred_score)
 
 # Remove generosity since little to no correlation to score
 # Predict score by sum method without generosity
-sumvar_nogen_model <- train %>% mutate(pred_score = gdp_per_capita + social_support + life_exp + freedom + gov_trust + 1.85,
+sumvar_nogen_model <- full_data %>% mutate(pred_score = gdp_per_capita + social_support + life_exp + freedom + gov_trust + 1.85,
                                        RMSE = RMSE(score, pred_score))
 
 # Calculate the RMSE
 sum_nogen_rmse = RMSE(sumvar_nogen_model$score, sumvar_nogen_model$pred_score)
-
-#Apply to test validation set
-# Predict score by sum method
-sumvar_model_test <- test %>%
-  mutate(pred_score = gdp_per_capita + social_support + life_exp + freedom + gov_trust + generosity + 1.85,
-         RMSE = RMSE(score, pred_score))
-
-# Calculate the RMSE
-sum_rmse_test = RMSE(sumvar_model_test$score, sumvar_model_test$pred_score)
-
-# Remove generosity since little to no correlation to score
-# Predict score by sum method without generosity
-sumvar_nogen_model_test <- test %>% mutate(pred_score = gdp_per_capita + social_support + life_exp + freedom + gov_trust + 1.85,
-                                       RMSE = RMSE(score, pred_score))
-
-# Calculate the RMSE
-sum_nogen_rmse_test = RMSE(sumvar_nogen_model_test$score, sumvar_nogen_model_test$pred_score)
-
 
 ##########################################################
 # Method 2: Use the Generalized Linear Model
@@ -293,7 +275,7 @@ data_fit_nogen$coefficients
 ##########################################################
 ##########################################################
 # Print all RMSEs to choose best one
-sum_rmse_test
-sum_nogen_rmse_test
+sum_rmse
+sum_nogen_rmse
 glm_rmse
 glm_nogen_rmse
