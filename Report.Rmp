@@ -183,7 +183,7 @@ hist_all <- hist(full_data$score, freq=TRUE, col="black", border="white",
 
 The lower the happiness score, the lower the values of each factor. We’ve been supplied with six key factors, but we will need to see if each of them actually has a significant impact on the happiness score. The following scatter plots explore the correlation between factors.
 
-```{r, figures-side, fig.show="hold", out.width="50%"}
+```{r, figures-side, fig.show="hold", out.width="50%", warning=FALSE}
 # Plot gdp_per_capita vs score
 ggplot(data = full_data, aes(x = score, y = gdp_per_capita)) + 
   geom_point(color='black') +
@@ -235,7 +235,8 @@ The first model we will use is very simple and obvious: adding all of the key fa
 ```{r sum_factors_model, echo=TRUE, warning=FALSE}
 # Predict score by sum method
 sumvar_model <- full_data %>%
-  mutate(pred_score = gdp_per_capita + social_support + life_exp + freedom + gov_trust + generosity + 1.85,
+  mutate(pred_score = gdp_per_capita + social_support + 
+           life_exp + freedom + gov_trust + generosity + 1.85,
          RMSE = RMSE(score, pred_score))
 
 # Calculate the RMSE
@@ -250,7 +251,8 @@ Next, we apply the same first model except this time we remove `Generosity`.
 
 ```{r sum_nogen_model, echo=TRUE, warning=FALSE}
 # Predict score by sum method
-sumvar_nogen_model <- full_data %>% mutate(pred_score = gdp_per_capita + social_support + life_exp + freedom + gov_trust + 1.85,
+sumvar_nogen_model <- full_data %>% mutate(pred_score = gdp_per_capita + social_support + 
+                                                        life_exp + freedom + gov_trust + 1.85,
           RMSE = RMSE(score, pred_score))
 
 # Calculate the RMSE
@@ -265,7 +267,8 @@ For our second model, we will use our split datasets created in the *Data Summar
 
 ```{r glm_model, echo=TRUE}
 # Predict score using GLM on training set
-data_fit <- glm(score ~ gdp_per_capita + social_support + life_exp + freedom + gov_trust + generosity,
+data_fit <- glm(score ~ gdp_per_capita + social_support + 
+                  life_exp + freedom + gov_trust + generosity,
                 data = train)
 
 # Add predicted scores to test data frame
@@ -279,7 +282,7 @@ glm_rmse = RMSE(results$score, results$pred_score)
 
 By plotting the predicted scores to the actual scores, we can see how close our predictions are.
 
-```{r glm_plot, echo=TRUE}
+```{r glm_plot, echo=TRUE, warning=FALSE}
 # Plot predicted scores vs actual scores with x=y line
 ggplot(data = results, aes(score, pred_score)) + 
   geom_point(color='black') +
@@ -300,17 +303,19 @@ c[] <- lapply(c, round, 3)
 
 \begin{equation}
   \hat{y} = `r c[1]` + `r c[2]` x_{GDP} + `r c[3]` x_{S} + `r c[4]` x_{L} + `r c[5]` x_{F} + `r c[6]` x_{G} + `r c[7]` x_{T} 
-\end{equation},
-where predicted score = $\hat{y}$, GDP per capita score = $x_{GDP}$, Social Support score = $x_{S}$, Life Expectancy score = $x_{L}$, Freedom score = $x_{F}$, Generosity score = $x_{G}$, Trust score = $x_{T}$.
+\end{equation}
+
+For the above equation, predicted score = $\hat{y}$, GDP per capita score = $x_{GDP}$, Social Support score = $x_{S}$, Life Expectancy score = $x_{L}$, Freedom score = $x_{F}$, Generosity score = $x_{G}$, Trust score = $x_{T}$.
 
 
 ### Model 2b: Use the GLM without Generosity
 
 Now, we apply our second model again but remove `Generosity`.
 
-```{r glm_model_nogen, echo=TRUE}
+```{r glm_model_nogen, echo=TRUE, warning=FALSE}
 # Predict score using GLM on training set
-data_fit_nogen <- glm(score ~ gdp_per_capita + social_support + life_exp + freedom + gov_trust,
+data_fit_nogen <- glm(score ~ gdp_per_capita + social_support + 
+      life_exp + freedom + gov_trust,
                 data = train)
 
 # Add predicted scores to test data frame
@@ -356,7 +361,8 @@ We can clearly see that the GLM model, including `Generosity` is the best model 
 
 ```{r glm_model_full, echo=TRUE, warning=FALSE}
 # Predict score using GLM
-full_fit <- glm(score ~ gdp_per_capita + social_support + life_exp + freedom + gov_trust + generosity,
+full_fit <- glm(score ~ gdp_per_capita + social_support + 
+                  life_exp + freedom + gov_trust + generosity,
                 data = full_data)
 
 # Add predicted scores to full data frame
