@@ -245,7 +245,7 @@ ggplot(data = results, aes(score, pred_score)) +
 data_fit$coefficients
 
 # Remove generosity since little to no correlation to score
-# Predict score using GLM
+# Predict score using GLM without generosity
 data_fit_nogen <- glm(score ~ gdp_per_capita + social_support + life_exp + freedom + gov_trust, 
                       data = train)
 
@@ -257,8 +257,7 @@ results_nogen <- test %>%
 # Calculate the RMSE
 glm_nogen_rmse = RMSE(results_nogen$score, results_nogen$pred_score)
 
-# plot predicted scores vs actual scores
-# also plot 1 to 1 line
+# Plot predicted scores vs actual scores with x=y line
 ggplot(data = results_nogen, aes(score, pred_score)) + 
   geom_point(color='black') +
   geom_smooth(method = "lm", se = TRUE) +
@@ -279,8 +278,8 @@ glm_rmse
 glm_nogen_rmse
 
 # Use best method from best RMSE on full dataset
-# Predict score using GLM exclude generosity
-full_fit <- glm(score ~ gdp_per_capita + social_support + life_exp + freedom + gov_trust,
+# Predict score using GLM
+full_fit <- glm(score ~ gdp_per_capita + social_support + life_exp + freedom + gov_trust + generosity,
                 data = full_data)
 
 # Add predicted scores to full data frame
