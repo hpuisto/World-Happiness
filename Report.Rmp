@@ -1,0 +1,209 @@
+---
+title: "World Happiness Project Report"
+author: "Hannah Puisto"
+date: "12/05/2023"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r prep, include=FALSE}
+
+##########################################################
+# Import data and create datasets
+#
+# World Happiness Ranks dataset found here:
+# Data downloaded for 2016-2019 from: https://www.kaggle.com/unsdsn/world-happiness
+##########################################################
+
+# Import libraries
+
+if(!require(tidyverse)) install.packages("tidyverse", repos = "http://cran.us.r-project.org")
+if(!require(caret)) install.packages("caret", repos = "http://cran.us.r-project.org")
+if(!require(knitr)) install.packages("knitr", repos = "http://cran.us.r-project.org")
+if(!require(DescTools)) install.packages("DescTools", repos = "http://cran.us.r-project.org")
+if(!require(data.table)) install.packages("data.table", repos = "http://cran.us.r-project.org")
+if(!require(readxl)) install.packages("readxl", repos = "http://cran.us.r-project.org")
+if(!require(ggcorrplot)) install.packages("ggcorrplot", repos = "http://cran.us.r-project.org")
+
+library(tidyverse)
+library(caret)
+library(knitr)
+library(DescTools)
+library(data.table)
+library(readxl)
+library(ggcorrplot)
+
+# Set your computer file location here for where you stored the files
+setwd("C:/EdX/World Happiness")
+
+# Import datasets
+data15 <- read.csv("wh2015.csv")
+data16 <- read.csv("wh2016.csv")
+data17 <- read.csv("wh2017.csv")
+data18 <- read.csv("wh2018.csv")
+data19 <- read.csv("wh2019.csv")
+
+#Make all columns in each dataset have the same names
+data15 <- data15 %>% 
+  rename(
+    rank = Happiness.Rank,
+    country = Country,
+    score = Happiness.Score,
+    gdp_per_capita = Economy..GDP.per.Capita.,
+    social_support = Family,
+    life_exp = Health..Life.Expectancy.,
+    freedom = Freedom,
+    gov_trust = Trust..Government.Corruption.,
+    generosity = Generosity,
+    dyst_res = Dystopia.Residual
+  )
+data16 <- data16 %>% 
+  rename(
+    rank = Happiness.Rank,
+    country = Country,
+    score = Happiness.Score,
+    gdp_per_capita = Economy..GDP.per.Capita.,
+    social_support = Family,
+    life_exp = Health..Life.Expectancy.,
+    freedom = Freedom,
+    gov_trust = Trust..Government.Corruption.,
+    generosity = Generosity,
+    dyst_res = Dystopia.Residual
+  )
+data17 <- data17 %>% 
+  rename(
+    rank = Happiness.Rank,
+    country = Country,
+    score = Happiness.Score,
+    gdp_per_capita = Economy..GDP.per.Capita.,
+    social_support = Family,
+    life_exp = Health..Life.Expectancy.,
+    freedom = Freedom,
+    gov_trust = Trust..Government.Corruption.,
+    generosity = Generosity,
+    dyst_res = Dystopia.Residual
+  )
+data18 <- data18 %>% 
+  rename(
+    rank = Overall.rank,
+    country = Country.or.region,
+    score = Score,
+    gdp_per_capita = GDP.per.capita,
+    social_support = Social.support,
+    life_exp = Healthy.life.expectancy,
+    freedom = Freedom.to.make.life.choices,
+    gov_trust = Perceptions.of.corruption,
+    generosity = Generosity
+  )
+data19 <- data19 %>% 
+  rename(
+    rank = Overall.rank,
+    country = Country.or.region,
+    score = Score,
+    gdp_per_capita = GDP.per.capita,
+    social_support = Social.support,
+    life_exp = Healthy.life.expectancy,
+    freedom = Freedom.to.make.life.choices,
+    gov_trust = Perceptions.of.corruption,
+    generosity = Generosity
+  )
+
+# Add a column to designate the year
+data15['year'] = 2015
+data16['year'] = 2016
+data17['year'] = 2017
+data18['year'] = 2018
+data19['year'] = 2019
+
+# Only keep specific columns from each dataset so all have the same variables
+final_data15 = subset(data15, select = -c(Region, Standard.Error, dyst_res) )
+final_data16 = subset(data16, select = -c(Region, Lower.Confidence.Interval, Upper.Confidence.Interval, dyst_res) )
+final_data17 = subset(data17, select = -c(Whisker.high, Whisker.low, dyst_res) )
+final_data18 <- data18
+final_data19 <- data19
+
+# Fix 2018 file so the perceptions of corruption variable is numeric
+final_data18$gov_trust = as.numeric(final_data18$gov_trust)
+
+# Create one large dataset
+full_data <-  rbind(final_data15, final_data16, final_data17, final_data18, final_data19)
+
+# Create training and testing datasets using p=0.80
+train_index <- createDataPartition(data$Score, times=1, p=0.80, list=FALSE)
+train <- data[train_index,]
+test <- data[-train_index,]
+
+```
+
+#############################################################
+#############################################################
+#############################################################
+## Introduction
+
+In this project, the second project in the HarvardX Data Science Capstone course, our goal is to choose and use a publicly available dataset to solve the problem of our choice by applying machine learning techniques that go beyond standard linear regression. The dataset chosen is about global happiness scores based on societal factors from the World Happiness Report published annually. This project studies the happiness of countries by implementing both a simple sum and a generalized linear model.
+
+The data for this project was imported from Kaggle, posted by the Sustainable Development Solutions Network based on the raw data from the official World Happiness Report. Only data from 2015 to 2019 is available on Kaggle, however, the data for 2020-2023 available directly from the World Happiness Report website is either formatted differently or is not available. The 2022 file doesn't exists on its own, and the Life Expectancy variable in the 2020, 2021, and 2023 file is the actual age instead of being rated like in the 2015-2019 files. Therefore, we only use data from 2015 to 2019 for consistency in this report.
+
+The happiness scores are based on answers from the Gallup World Poll to the main life evaluation question asked in the poll, known as the Cantril ladder, which asks respondents to think of a ladder with the best possible life for them being a 10 and the worst possible life being a 0 and to rate their own current lives on that scale. There are six key factors that contribute to the happiness scores: economic production (GDP), social support, life expectancy, freedom of choice, absence of government corruption, and generosity. Each of these key factors contribute to higher evaluations in each country than they are in *Dystopia*.
+
+Dystopia is a hypothetical country with values equal to the world’s lowest national averages for each of the other six factors. Dystopia is an imaginary country that has the world’s least-happy people. The purpose in establishing Dystopia is to have a benchmark against which all countries can be favorably compared (no country performs more poorly than Dystopia) in terms of each of the six key variables.
+
+The dystopian residual is a constant value, currently set at 1.85. Additionally, there are other residuals, or unexplained components, differing for each country, that reflect the extent to which the six key variables either over- or under-explain happiness scores. We choose leave all of these residuals out of our analysis, keeping in mind that our predicted happiness scores won’t be completely accurate because of it.
+
+Given that there are residuals in the calculations of the scores, the six key factors do not directly impact the total score reported for each country, but they do explain why some countries rank higher than others. Simply summing up the six factors will not yield the overall score, but it will give a general idea of where a country might place in the rankings.
+
+We will first take a look at the data in the *Data Summary* subsection before jumping into our analysis. In our exploration of the data, we will also see how each of the key six factors correlate to the scores and if they should be included in our analysis or removed.
+
+In the *Methods and Analysis* section, we will present two models performed in two different ways. The first model is a simple summation of the six key factors to predict happiness scores. The second model is a generalized linear model. In both models, we perform our analysis using all six key factors and using only five. In the *Results* section, we will compare our models and then summarize our findings in the *Conclusion* section.
+
+### Data Summary
+
+The raw data from the World Happiness Report contains the following for each year:
+
+* 2015: 158 countries with 12 variables
+* 2016: 157 countries with 13 variables
+* 2017: 155 countries with 12 variables
+* 2018: 156 countries with 9 variables
+* 2019: 156 countries with 9 variables
+
+We first modify the variable names so the same field has the same name in each file, add the year, and then remove variables that are not in all 5 data files. Next, we combine all 5 files into one large dataset consisting of 782 rows of data for the following 10 columns:
+
+```{r}
+names(full_data)
+```
+
+The data appears to be normally distributed when looking at the large dataset, as does each year separately when exploratory analysis was performed. The following histogram shows the distribution of happiness scores for all five years of data.
+
+```{r hist_score, echo=FALSE}
+hist_all <- hist(full_data$score, freq=TRUE, col="black", border="white", 
+     main="Happiness Scores for All Years", xlab="Score", ylab="Count")
+```
+
+The lower the happiness score, the lower the values of each factor. We’ve been supplied with six key factors, but we will need to see if each of them actually has a significant impact on the happiness score. We will use `ggcorrplot` to explore the correlation between factors.
+
+```{r corr_plot, echo=FALSE}
+temp <- full_data[, c(3,4,5,6,7,8,9)]
+cormat <- signif(cor(temp), 2)
+ggcorrplot(cormat)
+```
+
+`Generocity` appears to have little correlation with happiness score, so removing it from our model may be beneficial. We will perform our model with and without `Generosity` in the *Methods and Analysis* section. GDP per capita, social support, and life expectancy seem to have the largest correlation with happiness score. If we plot these four factors against the happiness score  with a best fit line, we can confirm this
+
+```{r, figures-side, fig.show="hold", out.width="50%"}
+
+```
+
+## Methods and Analysis
+
+## Results
+
+## Conclusion
+
+## References
+The source for the data files is Kaggle: https://www.kaggle.com/datasets/unsdsn/world-happiness/.
+The original data comes from the World Happiness Report website (https://worldhappiness.report/data/),
+Frequently Asked Questions for the World Happiness Report: https://worldhappiness.report/faq/
+Appendix 1 to the World Happiness Report: https://happiness-report.s3.amazonaws.com/2021/Appendix1WHR2021C2.pdf
