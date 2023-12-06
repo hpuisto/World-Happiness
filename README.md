@@ -6,5 +6,5 @@ The source for the data files is Kaggle: https://www.kaggle.com/datasets/unsdsn/
 
 ## Important files in this repository
 1. `Analysis_code.R` imports and saves the data we need to perform our analysis, splits it into a "training" set and a "validation" set, and then proceeds with our exploration and analysis. The last portion of this script applies the final model to the "validation" set for a final measure of accuracy.
-2. `report.Rmd` is an R-markdown file that generates a final report.
+2. `Report.Rmd` is an R-markdown file that generates a final report.
 3. `Report.pdf` is the final report generated for this project.
