@@ -277,3 +277,16 @@ sum_rmse
 sum_nogen_rmse
 glm_rmse
 glm_nogen_rmse
+
+# Use best methos from best RMSE on full dataset
+# Predict score using GLM
+full_fit <- glm(score ~ gdp_per_capita + social_support + life_exp + freedom + gov_trust + generosity,
+                data = full_data)
+
+# Add predicted scores to full data frame
+results_full <- full_data %>% 
+  mutate(pred_score = as.numeric(predict.glm(full_fit, newdata=full_data)),
+         RMSE = RMSE(score, pred_score))
+
+# Calculate the RMSE
+glm_full_rmse = RMSE(results_full$score, results_full$pred_score)
