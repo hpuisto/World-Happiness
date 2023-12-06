@@ -236,7 +236,7 @@ The first model we will use is very simple and obvious: adding all of the key fa
 # Predict score by sum method
 sumvar_model <- full_data %>%
   mutate(pred_score = gdp_per_capita + social_support + 
-           life_exp + freedom + gov_trust + generosity + 1.85,
+         life_exp + freedom + gov_trust + generosity + 1.85,
          RMSE = RMSE(score, pred_score))
 
 # Calculate the RMSE
@@ -252,8 +252,8 @@ Next, we apply the same first model except this time we remove `Generosity`.
 ```{r sum_nogen_model, echo=TRUE, warning=FALSE}
 # Predict score by sum method
 sumvar_nogen_model <- full_data %>% mutate(pred_score = gdp_per_capita + social_support + 
-                                                        life_exp + freedom + gov_trust + 1.85,
-          RMSE = RMSE(score, pred_score))
+                                                             life_exp + freedom + gov_trust + 1.85,
+         RMSE = RMSE(score, pred_score))
 
 # Calculate the RMSE
 sum_nogen_rmse = RMSE(sumvar_nogen_model$score, sumvar_nogen_model$pred_score)
@@ -268,7 +268,7 @@ For our second model, we will use our split datasets created in the *Data Summar
 ```{r glm_model, echo=TRUE}
 # Predict score using GLM on training set
 data_fit <- glm(score ~ gdp_per_capita + social_support + 
-                  life_exp + freedom + gov_trust + generosity,
+         life_exp + freedom + gov_trust + generosity,
                 data = train)
 
 # Add predicted scores to test data frame
@@ -302,10 +302,10 @@ c[] <- lapply(c, round, 3)
 ```
 
 \begin{equation}
-  \hat{y} = `r c[1]` + `r c[2]` x_{GDP} + `r c[3]` x_{S} + `r c[4]` x_{L} + `r c[5]` x_{F} + `r c[6]` x_{G} + `r c[7]` x_{T} 
+  \hat{y} = `r c[1]` + `r c[2]` x_{GDP} + `r c[3]` x_{S} + `r c[4]` x_{L} + `r c[5]` x_{F} + `r c[6]` x_{T} + `r c[7]` x_{G} 
 \end{equation}
 
-For the above equation, predicted score = $\hat{y}$, GDP per capita score = $x_{GDP}$, Social Support score = $x_{S}$, Life Expectancy score = $x_{L}$, Freedom score = $x_{F}$, Generosity score = $x_{G}$, Trust score = $x_{T}$.
+For the above equation, predicted score = $\hat{y}$, GDP per capita score = $x_{GDP}$, Social Support score = $x_{S}$, Life Expectancy score = $x_{L}$, Freedom score = $x_{F}$, Trust score = $x_{T}$, Generosity score = $x_{G}$.
 
 
 ### Model 2b: Use the GLM without Generosity
@@ -315,7 +315,7 @@ Now, we apply our second model again but remove `Generosity`.
 ```{r glm_model_nogen, echo=TRUE, warning=FALSE}
 # Predict score using GLM on training set
 data_fit_nogen <- glm(score ~ gdp_per_capita + social_support + 
-      life_exp + freedom + gov_trust,
+         life_exp + freedom + gov_trust,
                 data = train)
 
 # Add predicted scores to test data frame
@@ -345,7 +345,7 @@ c[] <- lapply(c, round, 3)
 ```
 
 \begin{equation}
-  \hat{y} = `r c[1]` + `r c[2]` x_{GDP} + `r c[3]` x_{S} + `r c[4]` x_{L} + `r c[5]` x_{F} + `r c[6]` x_{G} + `r c[7]` x_{T} 
+  \hat{y} = `r c[1]` + `r c[2]` x_{GDP} + `r c[3]` x_{S} + `r c[4]` x_{L} + `r c[5]` x_{F} + `r c[6]` x_{T} 
 \end{equation}.
 
 ## Results
@@ -357,12 +357,12 @@ The four models discussed in the *Methods and Analysis* section above returned t
 * GLM Model: `r glm_rmse`
 * GLM Model Without Generosity: `r glm_nogen_rmse`
 
-We can clearly see that the GLM model, including `Generosity` is the best model for our data. As a final step to this report, we apply our best model to the full dataset.
+We can clearly see that the GLM model, excluding `Generosity` is the best model for our data. As a final step to this report, we apply our best model to the full dataset.
 
 ```{r glm_model_full, echo=TRUE, warning=FALSE}
 # Predict score using GLM
 full_fit <- glm(score ~ gdp_per_capita + social_support + 
-                  life_exp + freedom + gov_trust + generosity,
+         life_exp + freedom + gov_trust,
                 data = full_data)
 
 # Add predicted scores to full data frame
@@ -378,7 +378,7 @@ The final RMSE after applying our best model to the full dataset containing 5 ye
 
 ## Conclusion
 
-In this report, we explored the correlation between six key factors in worldwide happiness using data from the World Happiness Report. Though we identified one key variable appeared to have little to no correlation to the overall happiness scores, removing it from our model did not reduce the error. When embarking on this analysis, I expected that the first model, summing all six key factors and the dystopian residual, would yield the best predictions. I was surprised to find that the GLM model performed the best.
+In this report, we explored the correlation between six key factors in worldwide happiness using data from the World Happiness Report. We identified one key variable, `Generosity`, appeared to have little to no correlation to the overall happiness scores and look at what removing it from our model would do to the error. After performing our analysis, we noticed that using the GLM model and excluding `Generosity` was the best model. When embarking on this analysis, I expected that the first model, summing all six key factors and the dystopian residual, would yield the best predictions. I was surprised to find that the GLM model performed the best.
 
 The dataset for the chosen topic was relatively small, which limited the model selection possibilities and could have caused over-training to occur in our model. The missing residuals caused a whole in the data that could have given more insight into the validity of each model. If the data available for all years contained the same variables and included the residual values, a more accurate fit could be calculated for our predictions. In the future, additional training models could be applied to the historical data to predict upcoming years' results. 
 
