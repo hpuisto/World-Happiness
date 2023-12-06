@@ -266,9 +266,8 @@ The RMSE for summing the key factors (without `Generosity`) and the dystopian co
 For our second model, we will use our split datasets created in the *Data Summary* section to fit a generalized linear model (GLM). Once we fit the data, we apply predicted results to our validation `test` dataset.
 
 ```{r glm_model, echo=TRUE}
-# Predict score using GLM on training set
-data_fit <- glm(score ~ gdp_per_capita + social_support + 
-         life_exp + freedom + gov_trust + generosity,
+# Predict score using GLM
+data_fit <- glm(score ~ gdp_per_capita + social_support + life_exp + freedom + gov_trust + generosity,
                 data = train)
 
 # Add predicted scores to test data frame
@@ -293,7 +292,7 @@ ggplot(data = results, aes(score, pred_score)) +
 The RMSE for applying the glm to the key factors is `r glm_rmse`. From our model, we can calculate the coefficients to determine the equation for our model.
 
 ```{r coefficients, echo=FALSE}
-# Print coefficients of fitted model
+# print coefficients of fitted model
 data_fit$coefficients
 
 # Save coefficients to use in equation
@@ -313,10 +312,9 @@ For the above equation, predicted score = $\hat{y}$, GDP per capita score = $x_{
 Now, we apply our second model again but remove `Generosity`.
 
 ```{r glm_model_nogen, echo=TRUE, warning=FALSE}
-# Predict score using GLM on training set
-data_fit_nogen <- glm(score ~ gdp_per_capita + social_support + 
-         life_exp + freedom + gov_trust,
-                data = train)
+# Predict score using GLM without generosity
+data_fit_nogen <- glm(score ~ gdp_per_capita + social_support + life_exp + freedom + gov_trust, 
+                      data = train)
 
 # Add predicted scores to test data frame
 results_nogen <- test %>% 
@@ -336,7 +334,7 @@ ggplot(data = results_nogen, aes(score, pred_score)) +
 The RMSE for applying the glm to the key factors (without `Generosity`) is `r glm_nogen_rmse`. The calculated coefficients are then used to determine the new equation for our model.
 
 ```{r coefficients_nogen, echo=FALSE}
-# Print coefficients of fitted model
+# print coefficients of fitted model
 data_fit_nogen$coefficients
 
 # Save coefficients to use in equation
@@ -362,7 +360,7 @@ We can clearly see that the GLM model, excluding `Generosity` is the best model 
 ```{r glm_model_full, echo=TRUE, warning=FALSE}
 # Predict score using GLM
 full_fit <- glm(score ~ gdp_per_capita + social_support + 
-         life_exp + freedom + gov_trust,
+         life_exp + freedom + gov_trust + generosity,
                 data = full_data)
 
 # Add predicted scores to full data frame
@@ -378,7 +376,7 @@ The final RMSE after applying our best model to the full dataset containing 5 ye
 
 ## Conclusion
 
-In this report, we explored the correlation between six key factors in worldwide happiness using data from the World Happiness Report. We identified one key variable, `Generosity`, appeared to have little to no correlation to the overall happiness scores and look at what removing it from our model would do to the error. After performing our analysis, we noticed that using the GLM model and excluding `Generosity` was the best model. When embarking on this analysis, I expected that the first model, summing all six key factors and the dystopian residual, would yield the best predictions. I was surprised to find that the GLM model performed the best.
+In this report, we explored the correlation between six key factors in worldwide happiness using data from the World Happiness Report. Though we identified one key variable appeared to have little to no correlation to the overall happiness scores, removing it from our model did not reduce the error. After performing our analysis, we noticed that using the GLM model and including `Generosity` was the best model. When embarking on this analysis, I expected that the first model, summing all six key factors and the dystopian residual, would yield the best predictions. I was surprised to find that the GLM model performed the best.
 
 The dataset for the chosen topic was relatively small, which limited the model selection possibilities and could have caused over-training to occur in our model. The missing residuals caused a whole in the data that could have given more insight into the validity of each model. If the data available for all years contained the same variables and included the residual values, a more accurate fit could be calculated for our predictions. In the future, additional training models could be applied to the historical data to predict upcoming years' results. 
 
