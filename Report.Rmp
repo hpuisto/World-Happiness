@@ -1,7 +1,7 @@
 ---
 title: "World Happiness Project Report"
 author: "Hannah Puisto"
-date: "12/05/2023"
+date: "12/06/2023"
 output: pdf_document
 ---
 
@@ -26,7 +26,6 @@ if(!require(knitr)) install.packages("knitr", repos = "http://cran.us.r-project.
 if(!require(DescTools)) install.packages("DescTools", repos = "http://cran.us.r-project.org")
 if(!require(data.table)) install.packages("data.table", repos = "http://cran.us.r-project.org")
 if(!require(readxl)) install.packages("readxl", repos = "http://cran.us.r-project.org")
-if(!require(ggcorrplot)) install.packages("ggcorrplot", repos = "http://cran.us.r-project.org")
 
 library(tidyverse)
 library(caret)
@@ -34,7 +33,6 @@ library(knitr)
 library(DescTools)
 library(data.table)
 library(readxl)
-library(ggcorrplot)
 
 # Set your computer file location here for where you stored the files
 setwd("C:/EdX/World Happiness")
@@ -131,11 +129,10 @@ final_data18$gov_trust = as.numeric(final_data18$gov_trust)
 # Create one large dataset
 full_data <-  rbind(final_data15, final_data16, final_data17, final_data18, final_data19)
 
-# Create training and testing datasets using p=0.80
-train_index <- createDataPartition(data$Score, times=1, p=0.80, list=FALSE)
-train <- data[train_index,]
-test <- data[-train_index,]
-
+# The RMSE function that will be used in this project is:
+RMSE <- function(true_score, predicted_score, na.rm = TRUE) {
+  sqrt(mean((true_score - predicted_score)^2, na.rm = na.rm))
+}
 ```
 
 #############################################################
@@ -145,13 +142,15 @@ test <- data[-train_index,]
 
 In this project, the second project in the HarvardX Data Science Capstone course, our goal is to choose and use a publicly available dataset to solve the problem of our choice by applying machine learning techniques that go beyond standard linear regression. The dataset chosen is about global happiness scores based on societal factors from the World Happiness Report published annually. This project studies the happiness of countries by implementing both a simple sum and a generalized linear model.
 
-The data for this project was imported from Kaggle, posted by the Sustainable Development Solutions Network based on the raw data from the official World Happiness Report. Only data from 2015 to 2019 is available on Kaggle, however, the data for 2020-2023 available directly from the World Happiness Report website is either formatted differently or is not available. The 2022 file doesn't exists on its own, and the Life Expectancy variable in the 2020, 2021, and 2023 file is the actual age instead of being rated like in the 2015-2019 files. Therefore, we only use data from 2015 to 2019 for consistency in this report.
+Our selection of models comes from the nature of the data itself. The description of the data files from the source provide insight that summing the key factors gives a good estimate, so we choose to explore this. Since the key factor variables are not values from a preset list and are a wide range of numbers, using a generalized linear model would be best to give us more flexibility as opposed to using a K-Nearest Neighbors or Classification model.
+
+The data for this project was imported from Kaggle, posted by the Sustainable Development Solutions Network based on the raw data from the official World Happiness Report. Only data from 2015 to 2019 is available on Kaggle, however, the data for 2020-2023 available directly from the World Happiness Report website is either formatted differently or is not available. The 2022 file doesn't exists on its own, and the Life Expectancy variable in the 2020, 2021, and 2023 file is the actual age instead of being a rated number like in the 2015-2019 files. Therefore, we only use data from 2015 to 2019 for consistency in this report.
 
 The happiness scores are based on answers from the Gallup World Poll to the main life evaluation question asked in the poll, known as the Cantril ladder, which asks respondents to think of a ladder with the best possible life for them being a 10 and the worst possible life being a 0 and to rate their own current lives on that scale. There are six key factors that contribute to the happiness scores: economic production (GDP), social support, life expectancy, freedom of choice, absence of government corruption, and generosity. Each of these key factors contribute to higher evaluations in each country than they are in *Dystopia*.
 
 Dystopia is a hypothetical country with values equal to the world’s lowest national averages for each of the other six factors. Dystopia is an imaginary country that has the world’s least-happy people. The purpose in establishing Dystopia is to have a benchmark against which all countries can be favorably compared (no country performs more poorly than Dystopia) in terms of each of the six key variables.
 
-The dystopian residual is a constant value, currently set at 1.85. Additionally, there are other residuals, or unexplained components, differing for each country, that reflect the extent to which the six key variables either over- or under-explain happiness scores. We choose leave all of these residuals out of our analysis, keeping in mind that our predicted happiness scores won’t be completely accurate because of it.
+The dystopian residual is a constant value, currently set at 1.85. Additionally, there are other residuals, or unexplained components, differing for each country, that reflect the extent to which the six key variables either over- or under-explain happiness scores. We choose these other residuals out of our analysis, keeping in mind that our predicted happiness scores won’t be completely accurate because of it.
 
 Given that there are residuals in the calculations of the scores, the six key factors do not directly impact the total score reported for each country, but they do explain why some countries rank higher than others. Simply summing up the six factors will not yield the overall score, but it will give a general idea of where a country might place in the rankings.
 
@@ -179,31 +178,206 @@ The data appears to be normally distributed when looking at the large dataset, a
 
 ```{r hist_score, echo=FALSE}
 hist_all <- hist(full_data$score, freq=TRUE, col="black", border="white", 
-     main="Happiness Scores for All Years", xlab="Score", ylab="Count")
+    main="Happiness Scores for All Years", xlab="Score", ylab="Count")
 ```
 
-The lower the happiness score, the lower the values of each factor. We’ve been supplied with six key factors, but we will need to see if each of them actually has a significant impact on the happiness score. We will use `ggcorrplot` to explore the correlation between factors.
-
-```{r corr_plot, echo=FALSE}
-temp <- full_data[, c(3,4,5,6,7,8,9)]
-cormat <- signif(cor(temp), 2)
-ggcorrplot(cormat)
-```
-
-`Generocity` appears to have little correlation with happiness score, so removing it from our model may be beneficial. We will perform our model with and without `Generosity` in the *Methods and Analysis* section. GDP per capita, social support, and life expectancy seem to have the largest correlation with happiness score. If we plot these four factors against the happiness score  with a best fit line, we can confirm this
+The lower the happiness score, the lower the values of each factor. We’ve been supplied with six key factors, but we will need to see if each of them actually has a significant impact on the happiness score. The following scatter plots explore the correlation between factors.
 
 ```{r, figures-side, fig.show="hold", out.width="50%"}
+# Plot gdp_per_capita vs score
+ggplot(data = full_data, aes(x = score, y = gdp_per_capita)) + 
+  geom_point(color='black') +
+  geom_smooth(method = "lm", se = TRUE)
 
+# Plot social_support vs score
+ggplot(data = full_data, aes(x = score, y = social_support)) + 
+  geom_point(color='black') +
+  geom_smooth(method = "lm", se = TRUE)
+
+# Plot life_exp vs score
+ggplot(data = full_data, aes(x = score, y = life_exp)) + 
+  geom_point(color='black') +
+  geom_smooth(method = "lm", se = TRUE)
+
+# Plot freedom vs score
+ggplot(data = full_data, aes(x = score, y = freedom)) + 
+  geom_point(color='black') +
+  geom_smooth(method = "lm", se = TRUE)
+
+# Plot gov_trust vs score
+ggplot(data = full_data, aes(x = score, y = gov_trust)) + 
+  geom_point(color='black') +
+  geom_smooth(method = "lm", se = TRUE)
+
+# Plot generosity vs score
+ggplot(data = full_data, aes(x = score, y = generosity)) + 
+  geom_point(color='black') +
+  geom_smooth(method = "lm", se = TRUE)
+```
+
+`Generocity` appears to have little correlation with happiness score, as can be seen by the horizontal best-fit line, so removing it from our model may be beneficial. We will perform our model with and without `Generosity` in the *Methods and Analysis* section. GDP per capita, social support, and life expectancy seem to have the largest correlation with happiness score, but all five other factors appear to have a positive correlation to the score.
+
+We split our large dataset into two subsets: a training dataset that we will use create our models, and a testing dataset that we will use to validate our models. Given the smaller size of the dataset, even with multiple years in it, we do not want to split the data in a way that we don't have enough records in one or the other. Since there are 5 years' worth of data in our large file, we chose to split the data 80% and 20%, training to testing respectively, so the validation dataset has a similar number of rows as a single year's dataset would have.
+
+```{r data_partitioning, echo=TRUE, warning=FALSE}
+# Create training and testing datasets using p=0.80
+train_index <- createDataPartition(full_data$score, times=1, p=0.80, list=FALSE)
+train <- full_data[train_index,]
+test <- full_data[-train_index,]
 ```
 
 ## Methods and Analysis
 
+### Model 1a: Summing the Key Factors
+
+The first model we will use is very simple and obvious: adding all of the key factors together and including the 1.85 dystopian residual constant. As discussed in the *Introduction*, our predictions using this method won't be the same as the happiness score due to the other residuals, but it should give us a close estimate. We also use the Root Mean Square Error (RMSE) as our indicator for success. As we are performing a simple sum and not training a model, we will use the full dataset in our sum.
+
+```{r sum_factors_model, echo=TRUE, warning=FALSE}
+# Predict score by sum method
+sumvar_model <- full_data %>%
+  mutate(pred_score = gdp_per_capita + social_support + life_exp + freedom + gov_trust + generosity + 1.85,
+         RMSE = RMSE(score, pred_score))
+
+# Calculate the RMSE
+sum_rmse = RMSE(sumvar_model$score, sumvar_model$pred_score)
+```
+
+The RMSE for summing the key factors and the dystopian constant is `r sum_rmse`.
+
+### Model 1b: Summing the Key Factors without Generosity
+
+Next, we apply the same first model except this time we remove `Generosity`.
+
+```{r sum_factors_model, echo=TRUE, warning=FALSE}
+# Predict score by sum method
+sumvar_nogen_model <- full_data %>% mutate(pred_score = gdp_per_capita + social_support + life_exp + freedom + gov_trust + 1.85,
+          RMSE = RMSE(score, pred_score))
+
+# Calculate the RMSE
+sum_nogen_rmse = RMSE(sumvar_nogen_model$score, sumvar_nogen_model$pred_score)
+```
+
+The RMSE for summing the key factors (without `Generosity`) and the dystopian constant is `r sum_nogen_rmse`.
+
+### Model 2a: Use the Generalized Linear Model (GLM)
+
+For our second model, we will use our split datasets created in the *Data Summary* section to fit a generalized linear model (GLM). Once we fit the data, we apply predicted results to our validation `test` dataset.
+
+```{r glm_model, echo=TRUE}
+# Predict score using GLM on training set
+data_fit <- glm(score ~ gdp_per_capita + social_support + life_exp + freedom + gov_trust + generosity,
+                data = train)
+
+# Add predicted scores to test data frame
+results <- test %>% 
+  mutate(pred_score = as.numeric(predict.glm(data_fit, newdata=test)),
+         RMSE = RMSE(score, pred_score))
+
+# Calculate the RMSE
+glm_rmse = RMSE(results$score, results$pred_score)
+```
+
+By plotting the predicted scores to the actual scores, we can see how close our predictions are.
+
+```{r glm_plot, echo=TRUE}
+# Plot predicted scores vs actual scores with x=y line
+ggplot(data = results, aes(score, pred_score)) + 
+  geom_point(color='black') +
+  geom_smooth(method = "lm", se = TRUE) +
+  geom_abline(color='blue')
+```
+
+The RMSE for applying the glm to the key factors is `r glm_rmse`. From our model, we can calculate the coefficients to determine the equation for our model.
+
+```{r coefficients, echo=FALSE}
+# Print coefficients of fitted model
+data_fit$coefficients
+
+# Save coefficients to use in equation
+c <- coefficients(data_fit)
+c[] <- lapply(c, round, 3)
+```
+
+\begin{equation}
+  \hat{y} = `r c[1]` + `r c[2]` x_{GDP} + `r c[3]` x_{S} + `r c[4]` x_{L} + `r c[5]` x_{F} + `r c[6]` x_{G} + `r c[7]` x_{T} 
+\end{equation},
+where predicted score = $\hat{y}$, GDP per capita score = $x_{GDP}$, Social Support score = $x_{S}$, Life Expectancy score = $x_{L}$, Freedom score = $x_{F}$, Generosity score = $x_{G}$, Trust score = $x_{T}$.
+
+
+### Model 2b: Use the GLM without Generosity
+
+Now, we apply our second model again but remove `Generosity`.
+
+```{r glm_model_nogen, echo=TRUE}
+# Predict score using GLM on training set
+data_fit_nogen <- glm(score ~ gdp_per_capita + social_support + life_exp + freedom + gov_trust,
+                data = train)
+
+# Add predicted scores to test data frame
+results_nogen <- test %>% 
+  mutate(pred_score = as.numeric(predict.glm(data_fit_nogen, newdata=test)),
+         RMSE = RMSE(score, pred_score))
+
+# Calculate the RMSE
+glm_nogen_rmse = RMSE(results_nogen$score, results_nogen$pred_score)
+
+# Plot predicted scores vs actual scores with x=y line
+ggplot(data = results_nogen, aes(score, pred_score)) + 
+  geom_point(color='black') +
+  geom_smooth(method = "lm", se = TRUE) +
+  geom_abline(color='blue')
+```
+
+The RMSE for applying the glm to the key factors (without `Generosity`) is `r glm_nogen_rmse`. The calculated coefficients are then used to determine the new equation for our model.
+
+```{r coefficients, echo=FALSE}
+# Print coefficients of fitted model
+data_fit_nogen$coefficients
+
+# Save coefficients to use in equation
+c <- coefficients(data_fit_nogen)
+c[] <- lapply(c, round, 3)
+```
+
+\begin{equation}
+  \hat{y} = `r c[1]` + `r c[2]` x_{GDP} + `r c[3]` x_{S} + `r c[4]` x_{L} + `r c[5]` x_{F} + `r c[6]` x_{G} + `r c[7]` x_{T} 
+\end{equation}.
+
 ## Results
+
+The four models discussed in the *Methods and Analysis* section above returned the following RMSEs:
+
+* Sum of Factors Model: `r sum_rmse`
+* Sum of Factors Model Without Generosity: `r sum_nogen_rmse`
+* GLM Model: `r glm_rmse`
+* GLM Model Without Generosity: `r glm_nogen_rmse`
+
+We can clearly see that the GLM model, including `Generosity` is the best model for our data. As a final step to this report, we apply our best model to the full dataset.
+
+```{r glm_model_full, echo=TRUE, warning=FALSE}
+# Predict score using GLM
+full_fit <- glm(score ~ gdp_per_capita + social_support + life_exp + freedom + gov_trust + generosity,
+                data = full_data)
+
+# Add predicted scores to full data frame
+results_full <- full_data %>% 
+  mutate(pred_score = as.numeric(predict.glm(full_fit, newdata=full_data)),
+         RMSE = RMSE(score, pred_score))
+
+# Calculate the RMSE
+glm_full_rmse = RMSE(results_full$score, results_full$pred_score)
+```
+
+The final RMSE after applying our best model to the full dataset containing 5 years' worth of data is `r glm_full_rmse`.
 
 ## Conclusion
 
+In this report, we explored the correlation between six key factors in worldwide happiness using data from the World Happiness Report. Though we identified one key variable appeared to have little to no correlation to the overall happiness scores, removing it from our model did not reduce the error. When embarking on this analysis, I expected that the first model, summing all six key factors and the dystopian residual, would yield the best predictions. I was surprised to find that the GLM model performed the best.
+
+The dataset for the chosen topic was relatively small, which limited the model selection possibilities and could have caused over-training to occur in our model. The missing residuals caused a whole in the data that could have given more insight into the validity of each model. If the data available for all years contained the same variables and included the residual values, a more accurate fit could be calculated for our predictions. In the future, additional training models could be applied to the historical data to predict upcoming years' results. 
+
 ## References
-The source for the data files is Kaggle: https://www.kaggle.com/datasets/unsdsn/world-happiness/.
-The original data comes from the World Happiness Report website (https://worldhappiness.report/data/),
-Frequently Asked Questions for the World Happiness Report: https://worldhappiness.report/faq/
-Appendix 1 to the World Happiness Report: https://happiness-report.s3.amazonaws.com/2021/Appendix1WHR2021C2.pdf
+- The source for the data files is Kaggle: https://www.kaggle.com/datasets/unsdsn/world-happiness/
+- The World Happiness Report website : https://worldhappiness.report/data/)
+- Frequently Asked Questions for the World Happiness Report: https://worldhappiness.report/faq/
+- Appendix 1 to the World Happiness Report: https://happiness-report.s3.amazonaws.com/2021/Appendix1WHR2021C2.pdf
