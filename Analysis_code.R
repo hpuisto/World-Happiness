@@ -278,9 +278,9 @@ sum_nogen_rmse
 glm_rmse
 glm_nogen_rmse
 
-# Use best methos from best RMSE on full dataset
-# Predict score using GLM
-full_fit <- glm(score ~ gdp_per_capita + social_support + life_exp + freedom + gov_trust + generosity,
+# Use best method from best RMSE on full dataset
+# Predict score using GLM exclude generosity
+full_fit <- glm(score ~ gdp_per_capita + social_support + life_exp + freedom + gov_trust,
                 data = full_data)
 
 # Add predicted scores to full data frame
