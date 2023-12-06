@@ -212,3 +212,16 @@ hist_scores <- full_data %>%
   ) +
   theme_classic()
 hist_scores
+
+##############################
+# histogram of scores
+hist(final_data15$score, freq=TRUE, col="black", border="white", 
+     main="2015 Happiness Scores", xlab="Score", ylab="Count")
+hist(final_data16$score, freq=TRUE, col="black", border="white", 
+     main="2016 Happiness Scores", xlab="Score", ylab="Count")
+hist(final_data17$score, freq=TRUE, col="black", border="white", 
+     main="2017 Happiness Scores", xlab="Score", ylab="Count")
+hist(final_data18$score, freq=TRUE, col="black", border="white", 
+     main="2018 Happiness Scores", xlab="Score", ylab="Count")
+hist(final_data19$score, freq=TRUE, col="black", border="white", 
+     main="2019 Happiness Scores", xlab="Score", ylab="Count")
