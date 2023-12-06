@@ -21,6 +21,7 @@ if(!require(knitr)) install.packages("knitr", repos = "http://cran.us.r-project.
 if(!require(DescTools)) install.packages("DescTools", repos = "http://cran.us.r-project.org")
 if(!require(data.table)) install.packages("data.table", repos = "http://cran.us.r-project.org")
 if(!require(readxl)) install.packages("readxl", repos = "http://cran.us.r-project.org")
+if(!require(ggcorrplot)) install.packages("ggcorrplot", repos = "http://cran.us.r-project.org")
 
 library(tidyverse)
 library(caret)
@@ -28,6 +29,7 @@ library(knitr)
 library(DescTools)
 library(data.table)
 library(readxl)
+library(ggcorrplot)
 
 # Set your computer file location here for where you stored the files
 setwd("C:/EdX/World Happiness")
@@ -134,10 +136,10 @@ RMSE <- function(true_score = NULL, predicted_score = NULL) {
 }
 
 ##########################################################
-# Number of columns and rows in training and testing datasets
+# Number of columns and rows in large dataset
 dim(full_data)
 
-# Show an organized section of training dataset
+# Show an organized section of large dataset
 glimpse(full_data)
 
 # Show the structure of the training dataset
@@ -159,3 +161,113 @@ hist_19 <- hist(final_data19$score, freq=TRUE, col="black", border="white",
      main="2019 Happiness Scores", xlab="Score", ylab="Count")
 hist_all <- hist(full_data$score, freq=TRUE, col="black", border="white", 
      main="Happiness Scores for All Years", xlab="Score", ylab="Count")
+
+##########################################################
+# Explore the correlation between the predictors and happiness score
+temp <- full_data[, c(3,4,5,6,7,8,9)]
+cormat <- signif(cor(temp), 2)
+ggcorrplot(cormat)
+
+# Confirm correlations with scatterplots
+# Plot gdp_per_capita vs score
+ggplot(data = full_data, aes(x = score, y = gdp_per_capita)) + 
+  geom_point(color='black') +
+  geom_smooth(method = "lm", se = TRUE)
+
+# Plot social_support vs score
+ggplot(data = full_data, aes(x = score, y = social_support)) + 
+  geom_point(color='black') +
+  geom_smooth(method = "lm", se = TRUE)
+
+# Plot life_exp vs score
+ggplot(data = full_data, aes(x = score, y = life_exp)) + 
+  geom_point(color='black') +
+  geom_smooth(method = "lm", se = TRUE)
+
+# Plot freedom vs score
+ggplot(data = full_data, aes(x = score, y = freedom)) + 
+  geom_point(color='black') +
+  geom_smooth(method = "lm", se = TRUE)
+
+# Plot gov_trust vs score
+ggplot(data = full_data, aes(x = score, y = gov_trust)) + 
+  geom_point(color='black') +
+  geom_smooth(method = "lm", se = TRUE)
+
+# Plot generosity vs score
+ggplot(data = full_data, aes(x = score, y = generosity)) + 
+  geom_point(color='black') +
+  geom_smooth(method = "lm", se = TRUE)
+
+# Create training and testing datasets using p=0.80
+train_index <- createDataPartition(data$Score, times=1, p=0.80, list=FALSE)
+train <- data[train_index,]
+test <- data[-train_index,]
+
+
+##########################################################
+##########################################################
+# Begin Analysis
+##########################################################
+##########################################################
+
+##########################################################
+# Method 1: Add six key variables together to predict scores
+##########################################################
+# Predict score by sum method
+sumvar_model <- train %>% mutate(pred_score = gdp.per.capita + social.support + life.exp + freedom + gov_trust + generosity)
+
+# Calculate the RMSE
+sum_rmse = RMSE(test$score, pred_score)
+
+# Remove generosity since little to no correlation to score
+# Predict score by sum method without generosity
+sumvar_nogen_model <- train %>% mutate(pred_score = gdp.per.capita + social.support + life.exp + freedom + gov_trust)
+
+# Calculate the RMSE
+sum_nogen_rmse = RMSE(test$score, pred_score)
+
+##########################################################
+# Method 2: Use the Generalized Linear Model
+##########################################################
+# Predict score using GLM
+data_fit <- glm(score ~ gdp.per.capita + social.support + life.exp + freedom + gov_trust + generosity,
+           data = train)
+
+# Add predicted scores to test data frame
+results <- test %>% 
+  mutate(pred_score = predict.glm(data_fit, newdata=test))
+
+# Calculate the RMSE
+glm_rmse = RMSE(results$Score, results$pred_score)
+
+# Plot predicted scores vs actual scores with x=y line
+ggplot(data = results, aes(score, pred_score)) + 
+  geom_point(color='black') +
+  geom_smooth(method = "lm", se = TRUE) +
+  geom_abline(color='blue')
+
+# print coefficients of fitted model
+data_fit$coefficients
+
+# Remove generosity since little to no correlation to score
+# Predict score using GLM
+data_fit_nogen <- glm(score ~ score ~ gdp.per.capita + social.support + life.exp + freedom + gov_trust, 
+                data = train)
+
+# Add predicted scores to test data frame
+results_nogen <- test %>% 
+  mutate(pred_score = predict.glm(data_fit_nogen, newdata=test))
+
+# Calculate the RMSE
+glm_nogen_rmse = RMSE(results_nogen$Score, results_nogen$pred_score)
+
+# plot predicted scores vs actual scores
+# also plot 1 to 1 line
+ggplot(data = results_nogen, aes(score, pred_score)) + 
+  geom_point(color='black') +
+  geom_smooth(method = "lm", se = TRUE) +
+  geom_abline(color='blue')
+
+# print coefficients of fitted model
+data_fit_nogen$coefficients
