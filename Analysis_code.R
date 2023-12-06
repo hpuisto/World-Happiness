@@ -43,52 +43,65 @@ data19 <- read.csv("wh2019.csv")
 data15 <- data15 %>% 
   rename(
     rank = Happiness.Rank,
+    country = Country,
     score = Happiness.Score,
     gdp_per_capita = Economy..GDP.per.Capita.,
     social_support = Family,
     life_exp = Health..Life.Expectancy.,
+    freedom = Freedom,
     gov_trust = Trust..Government.Corruption.,
+    generosity = Generosity,
     dyst_res = Dystopia.Residual
   )
 data16 <- data16 %>% 
   rename(
     rank = Happiness.Rank,
+    country = Country,
     score = Happiness.Score,
     gdp_per_capita = Economy..GDP.per.Capita.,
     social_support = Family,
     life_exp = Health..Life.Expectancy.,
+    freedom = Freedom,
     gov_trust = Trust..Government.Corruption.,
+    generosity = Generosity,
     dyst_res = Dystopia.Residual
   )
 data17 <- data17 %>% 
   rename(
     rank = Happiness.Rank,
+    country = Country,
     score = Happiness.Score,
     gdp_per_capita = Economy..GDP.per.Capita.,
     social_support = Family,
     life_exp = Health..Life.Expectancy.,
+    freedom = Freedom,
     gov_trust = Trust..Government.Corruption.,
+    generosity = Generosity,
     dyst_res = Dystopia.Residual
   )
 data18 <- data18 %>% 
   rename(
-    rank = Overall.Rank,
+    rank = Overall.rank,
     country = Country.or.region,
+    score = Score,
     gdp_per_capita = GDP.per.capita,
     social_support = Social.support,
     life_exp = Healthy.life.expectancy,
     freedom = Freedom.to.make.life.choices,
-    gov_trust = Perceptions.of.corruption
+    gov_trust = Perceptions.of.corruption,
+    generosity = Generosity
   )
 data19 <- data19 %>% 
   rename(
-    rank = Overall.Rank,
+    rank = Overall.rank,
     country = Country.or.region,
+    score = Score,
     gdp_per_capita = GDP.per.capita,
     social_support = Social.support,
     life_exp = Healthy.life.expectancy,
     freedom = Freedom.to.make.life.choices,
-    gov_trust = Perceptions.of.corruption
+    gov_trust = Perceptions.of.corruption,
+    generosity = Generosity
   )
 
 # Add a column to designate the year
@@ -101,13 +114,15 @@ data19['year'] = 2019
 # Only keep specific columns from each dataset so all have the same variables
 final_data15 = subset(data15, select = -c(Region, Standard.Error, dyst_res) )
 final_data16 = subset(data16, select = -c(Region, Lower.Confidence.Interval, Upper.Confidence.Interval, dyst_res) )
-final_data17 = subset(data17, select = -c(, Whisker.high, Whisker.low, dyst_res) )
+final_data17 = subset(data17, select = -c(Whisker.high, Whisker.low, dyst_res) )
+final_data18 <- data18
+final_data19 <- data19
 
 # Fix 2018 file so the perceptions of corruption variable is numeric
 final_data18$gov_trust = as.numeric(final_data18$gov_trust)
 
 # Create one large dataset
-full_data <-  rbind(data final_data15, data final_data16, data final_data17, data final_data18, data final_data19)
+full_data <-  rbind(final_data15, final_data16, final_data17, final_data18, final_data19)
 
 ##########################################################
 # Initial data exploration
@@ -115,7 +130,7 @@ full_data <-  rbind(data final_data15, data final_data16, data final_data17, dat
 
 # The RMSE function that will be used in this project is:
 RMSE <- function(true_score = NULL, predicted_score = NULL) {
-    sqrt(mean((true_score - predicted_score)^2))
+  sqrt(mean((true_score - predicted_score)^2))
 }
 
 ##########################################################
@@ -135,10 +150,10 @@ summary(full_data)
 hist_scores15 <- final_data15 %>%
   count(country) %>%
   ggplot(aes(n)) +
-  geom_histogram(fill = “black”) +
+  geom_histogram(fill = 'black') +
   labs(
-    title = “2015 Happiness Scores”,
-    x = “Score”, y = “Count”, fill = element_blank()
+    title = '2015 Happiness Scores',
+    x = 'Score', y = 'Count', fill = element_blank()
   ) +
   theme_classic()
 hist_scores15
@@ -146,10 +161,10 @@ hist_scores15
 hist_scores16 <- final_data16 %>%
   count(country) %>%
   ggplot(aes(n)) +
-  geom_histogram(fill = “black”) +
+  geom_histogram(fill = 'black') +
   labs(
-    title = “2016 Happiness Scores”,
-    x = “Score”, y = “Count”, fill = element_blank()
+    title = '2016 Happiness Scores',
+    x = 'Score', y = 'Count', fill = element_blank()
   ) +
   theme_classic()
 hist_scores16
@@ -157,10 +172,10 @@ hist_scores16
 hist_scores17 <- final_data17 %>%
   count(country) %>%
   ggplot(aes(n)) +
-  geom_histogram(fill = “black”) +
+  geom_histogram(fill = 'black') +
   labs(
-    title = “2017 Happiness Scores”,
-    x = “Score”, y = “Count”, fill = element_blank()
+    title = '2017 Happiness Scores',
+    x = 'Score', y = 'Count', fill = element_blank()
   ) +
   theme_classic()
 hist_scores17
@@ -168,10 +183,10 @@ hist_scores17
 hist_scores18 <- final_data18 %>%
   count(country) %>%
   ggplot(aes(n)) +
-  geom_histogram(fill = “black”) +
+  geom_histogram(fill = 'black') +
   labs(
-    title = “2018 Happiness Scores”,
-    x = “Score”, y = “Count”, fill = element_blank()
+    title = '2018 Happiness Scores',
+    x = 'Score', y = 'Count', fill = element_blank()
   ) +
   theme_classic()
 hist_scores18
@@ -179,10 +194,10 @@ hist_scores18
 hist_scores19 <- final_data19 %>%
   count(country) %>%
   ggplot(aes(n)) +
-  geom_histogram(fill = “black”) +
+  geom_histogram(fill = 'black') +
   labs(
-    title = “2019 Happiness Scores”,
-    x = “Score”, y = “Count”, fill = element_blank()
+    title = '2019 Happiness Scores',
+    x = 'Score', y = 'Count', fill = element_blank()
   ) +
   theme_classic()
 hist_scores19
@@ -190,10 +205,10 @@ hist_scores19
 hist_scores <- full_data %>%
   count(country) %>%
   ggplot(aes(n)) +
-  geom_histogram(fill = “black”) +
+  geom_histogram(fill = 'black') +
   labs(
-    title = “Happiness Scores for All Years”,
-    x = “Score”, y = “Count”, fill = element_blank()
+    title = 'Happiness Scores for All Years',
+    x = 'Score', y = 'Count', fill = element_blank()
   ) +
   theme_classic()
 hist_scores
