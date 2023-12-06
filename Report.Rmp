@@ -355,7 +355,7 @@ The four models discussed in the *Methods and Analysis* section above returned t
 * GLM Model: `r glm_rmse`
 * GLM Model Without Generosity: `r glm_nogen_rmse`
 
-We can clearly see that the GLM model, excluding `Generosity` is the best model for our data. As a final step to this report, we apply our best model to the full dataset.
+We can clearly see that the GLM model, including `Generosity` is the best model for our data. As a final step to this report, we apply our best model to the full dataset.
 
 ```{r glm_model_full, echo=TRUE, warning=FALSE}
 # Predict score using GLM
